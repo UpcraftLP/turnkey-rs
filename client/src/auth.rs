@@ -98,9 +98,7 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(app: &App<C>) -> root
     let rq_client = Client::builder().build()?;
 
     let response = rq_client.post(endpoint_url).headers(headers).send().await?;
-    let txt = response.text().await?;
-
-    info!("Received:\n{txt}");
+    info!("Received:\n{response:?}");
 
     Ok(())
 }
