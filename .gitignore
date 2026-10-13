@@ -1,0 +1,13 @@
+/bin/
+/target/
+
+**/.vs
+**/.vscode
+
+/.idea/
+*.iml
+*.ipr
+*.iws
+
+*.env
+!example.env
