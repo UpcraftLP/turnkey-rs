@@ -1,4 +1,4 @@
-name: Build Docker Image
+name: Build Docker Image (Server)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -8,6 +8,7 @@ on:
   push:
     branches: [ "*" ]
     tags: [ "*" ]
+    paths-ignore: [ "client/**" ]
 
 env:
   RUST_VERSION: 1.99.0
