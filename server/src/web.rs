@@ -1,5 +1,6 @@
 use axum::Router;
 use axum::http::StatusCode;
+use axum::routing::get;
 use serde::Serializer;
 
 mod api;
@@ -7,6 +8,7 @@ mod state;
 
 pub(crate) async fn create_router<S>() -> rootcause::Result<Router<S>> {
     Ok(Router::new()
+        .route("/", get(|| async { "/" }))
         .nest("/api", api::create_router().await?)
         .with_state(()))
 }

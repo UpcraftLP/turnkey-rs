@@ -2,11 +2,13 @@ mod v0;
 
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use axum::routing::get;
 use axum::{Json, Router};
 use serde::Serialize;
 
 pub(crate) async fn create_router<S>() -> rootcause::Result<Router<S>> {
     Ok(Router::new()
+        .route("/", get(|| async { "/api" }))
         .nest("/v0", v0::create_router().await?)
         .with_state(()))
 }

@@ -2,7 +2,7 @@ mod create_turn_session;
 
 use crate::web::state::AppState;
 use axum::Router;
-use axum::routing::post;
+use axum::routing::{get, post};
 use huskarl::core::jwk::JwksSource;
 use huskarl::core::url_mapping::PublicUrlMapping;
 use huskarl_axum::resource_router::ResourceRouter;
@@ -23,6 +23,7 @@ pub(crate) async fn create_router() -> rootcause::Result<Router> {
 
     let mapping = PublicUrlMapping::new(state.http_frontend_url.as_str(), "/api/v0")
         .context("url mapping failed")?;
+
     let definition = ResourceDefinition::builder()
         .resource_name("TURN session API")
         .subpath("/api/v0")
@@ -43,6 +44,7 @@ pub(crate) async fn create_router() -> rootcause::Result<Router> {
         .context("Unable to create resource validator")?;
 
     let router: Router<()> = Router::new()
+        .route("/", get(|| async { "/api/v0" }))
         .route(
             "/create-turn-session",
             post(create_turn_session::create_turn_session),
