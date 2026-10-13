@@ -1,0 +1,26 @@
+[package]
+name = "turnkey_server"
+edition = "2024"
+
+[dependencies]
+axum = { version = "0.8.9", features = ["http2"] }
+chrono = { workspace = true }
+"rootcause" = { workspace = true }
+"serde" = { workspace = true }
+"turnkey_shared" = { path = "../shared" }
+"tokio" = { workspace = true }
+"tracing" = { workspace = true }
+"tracing-subscriber" = { workspace = true }
+sha1 = "0.11.0"
+hmac = "0.13.0"
+dotenvy = { git = "https://github.com/allan2/dotenvy", rev = "cf125ddeb263c234ad83a46e5d4115b53888f24f", version = "0.15.7", features = ["macros"] }
+oauth-axum = "0.1.4"
+huskarl.workspace = true
+huskarl-reqwest = { workspace = true }
+huskarl-crypto-native = { workspace = true }
+http = { workspace = true }
+huskarl-resource-server = "0.11.9"
+tower-http = { version = "0.7.1", features = ["trace"] }
+url = "2.5.8"
+uri-url = "0.3.0"
+huskarl-axum = { git = "https://github.com/huskarl-rs/huskarl-axum", rev = "5ac9946d48d81e0303628e51a33734ea76b8962b", version = "0.1.0" }

@@ -1,0 +1,19 @@
+[package]
+name = "turnkey_client"
+edition = "2024"
+
+[dependencies]
+reqwest = { version = "0.13.5", features = ["json", "zstd"] }
+"rootcause" = { workspace = true }
+"serde" = { workspace = true }
+chrono = { workspace = true }
+"turnkey_shared" = { path = "../shared" }
+"tokio" = { workspace = true }
+"tracing" = { workspace = true }
+"tracing-subscriber" = { workspace = true }
+clap = { version = "4.6.7", features = ["derive", "wrap_help"] }
+huskarl = { workspace = true, features = ["authorization-flow-loopback", "experimental-oidc-key-binding"] }
+huskarl-reqwest = { workspace = true }
+huskarl-crypto-native = { workspace = true }
+http = { workspace = true }
+url = "2.5.8"

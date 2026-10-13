@@ -1,0 +1,8 @@
+[package]
+name = "turnkey_shared"
+edition = "2024"
+
+[dependencies]
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_with = { version = "3.24.0", features = ["base64"] }
