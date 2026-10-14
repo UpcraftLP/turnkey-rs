@@ -17,3 +17,5 @@ huskarl-reqwest = { workspace = true }
 huskarl-crypto-native = { workspace = true }
 http = { workspace = true }
 url = "2.5.8"
+default-env = "0.1.1"
+webbrowser = { version = "1.2.4", features = ["hardened", "disable-wsl"] }
