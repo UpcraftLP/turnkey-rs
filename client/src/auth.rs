@@ -21,6 +21,7 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(app: &App<C>) -> root
         .await
         .context("Failed to bind auth callback listener")?;
 
+    // TODO get from savefile
     let dpop_key = PrivateKey::generate(GenerateAlgorithm::Es256, None)
         .context("Failed to generate DPoP key")?;
 
@@ -60,7 +61,10 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(app: &App<C>) -> root
         let dt: DateTime<Utc> = exp.into();
         info!("Expires at: {dt}");
     }
+
+    // TODO turn this into webview instead
     info!("Authorization URL: {authorization_url}");
+    webbrowser::open(&authorization_url.to_string()).context("Unable to open authorization URL in browser")?;
 
     // TODO custom CallbackRenderer to customize HTML that is shown to the user
     let completed = grant
@@ -68,7 +72,7 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(app: &App<C>) -> root
         .await
         .context("Unable to get auth token")?;
 
-    // info!("ID Token: {:?}", completed.id_token);
+    info!("ID Token: {:?}", completed.id_token);
 
     let token_source = GrantTokenSource::builder()
         .grant(grant)

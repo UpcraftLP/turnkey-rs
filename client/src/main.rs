@@ -7,21 +7,21 @@ use huskarl::core::http::HttpClient;
 use huskarl::core::server_metadata::AuthorizationServerMetadata;
 use rootcause::prelude::ResultExt;
 use std::path::PathBuf;
-
+use default_env::default_env;
 use huskarl_reqwest::ReqwestClient;
 use tracing::Level;
 
 // TODO set during build
 const OIDC_ISSUER_URL: &str = env!("TURNKEY_OIDC_ISSUER_URL");
 const OAUTH_CLIENT_ID: &str = env!("TURNKEY_OIDC_CLIENT_ID");
-const OAUTH_SCOPES: &str = env!("TURNKEY_OAUTH_SCOPES");
-const TURN_SESSION_SERVER_URL: &str = env!("TURNKEY_SESSION_SERVER_URL");
+const TURN_SESSION_SERVER_URL: &str = default_env!("TURNKEY_SESSION_SERVER_URL", "http://localhost:5000"); // TODO migrate to stdlib option_env!().unwrap_or() when that becomes const in stable toolchain
+const OAUTH_SCOPES: [&str; 4] = ["openid", "profile", "offline_access", "bound_key"];
 
 // TODO store refresh token with salt
 const CREDENTIALS_SALT: &str = "";
 
 fn get_oauth_scopes() -> Vec<String> {
-    OAUTH_SCOPES.split(',').map(Into::into).collect()
+    OAUTH_SCOPES.map(Into::into).to_vec()
 }
 
 #[derive(Parser)]
