@@ -1,7 +1,11 @@
+#[macro_use]
+extern crate extension_traits;
+
 mod auth;
 mod credentials;
 mod store;
 
+use std::io;
 use clap::{Parser, Subcommand};
 use huskarl::core::http::HttpClient;
 use huskarl::core::server_metadata::AuthorizationServerMetadata;
@@ -14,7 +18,7 @@ use tracing::Level;
 // TODO set during build
 const OIDC_ISSUER_URL: &str = env!("TURNKEY_OIDC_ISSUER_URL");
 const OAUTH_CLIENT_ID: &str = env!("TURNKEY_OIDC_CLIENT_ID");
-const TURN_SESSION_SERVER_URL: &str = default_env!("TURNKEY_SESSION_SERVER_URL", "http://localhost:5000"); // TODO migrate to stdlib option_env!().unwrap_or() when that becomes const in stable toolchain
+const TURN_SESSION_SERVER_URL: &str = "http://localhost:5000"; // default_env!("TURNKEY_SESSION_SERVER_URL", "http://localhost:5000"); // TODO migrate to stdlib option_env!().unwrap_or() when that becomes const in stable toolchain
 const OAUTH_SCOPES: [&str; 4] = ["openid", "profile", "offline_access", "bound_key"];
 
 // TODO store refresh token with salt
@@ -50,6 +54,7 @@ async fn main() -> rootcause::Result<()> {
                 .with_default_directive(Level::DEBUG.into())
                 .from_env_lossy(),
         )
+        .with_writer(io::stderr)
         .init();
 
     let cli = Args::try_parse().context("Unable to parse CLI arguments")?;

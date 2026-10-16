@@ -13,6 +13,9 @@ use huskarl_crypto_native::asymmetric::signer::{GenerateAlgorithm, PrivateKey};
 use reqwest::{Client, Method};
 use rootcause::prelude::ResultExt;
 use std::str::FromStr;
+use bytes::Bytes;
+use serde::de::DeserializeOwned;
+use serde_json::Value;
 use tracing::info;
 use url::Url;
 
@@ -72,8 +75,6 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(app: &App<C>) -> root
         .await
         .context("Unable to get auth token")?;
 
-    info!("ID Token: {:?}", completed.id_token);
-
     let token_source = GrantTokenSource::builder()
         .grant(grant)
         .grant_parameters(NoSource)
@@ -101,8 +102,32 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(app: &App<C>) -> root
     // TODO user agent
     let rq_client = Client::builder().build()?;
 
-    let response = rq_client.post(endpoint_url).headers(headers).send().await?;
-    info!("Received:\n{response:?}");
+    let response = rq_client.post(endpoint_url).headers(headers).send().await.context("Failed to send TURN session API request")?;
+    let status = response.status().as_u16();
+
+    let parsed: Value = response.error_for_status().context_with(|| format!("Received status code {status}"))?.json_with_error().await
+        .context("Unable to read response body")?;
+
+    serde_json::to_writer(std::io::stdout(), &parsed).context("Unable to serialize API response")?;
 
     Ok(())
+}
+
+#[extension(pub(crate) trait BetterJsonError)]
+impl reqwest::Response {
+    async fn json_with_error<T>(self) -> rootcause::Result<T>
+    where
+        T: DeserializeOwned,
+    {
+        let url = self.url().clone();
+        let content: Bytes = self
+            .bytes()
+            .await
+            .context_with(|| format!("Unable to read response body for {url}"))?;
+        let reader = &mut serde_json::Deserializer::from_slice(&content);
+        let json = serde_path_to_error::deserialize(reader)
+            .context_with(|| format!("Unable to decode response for {url}"))?;
+
+        Ok(json)
+    }
 }
