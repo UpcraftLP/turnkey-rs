@@ -30,16 +30,19 @@ pub(crate) async fn create_turn_session(State(state): State<Arc<AppState>>, acce
         timestamp = expiration_time.timestamp()
     );
 
-    let token = state
-        .calculate_turn_session_token(&username_final)
-        .as_bytes()
-        .to_vec();
+    let turn_servers = state.turn_servers.as_ref().map(|vec| vec.iter().map(|server_info| {
+        let token = server_info
+            .calculate_session_token(&username_final)
+            .as_bytes()
+            .to_vec();
 
-    let turn_session = TurnServerSession {
-        expires_at: now.add(SESSION_DURATION),
-        username: username_final,
-        token,
-    };
+        TurnServerSession {
+            address: server_info.address.clone(),
+            expires_at: expiration_time,
+            username: username_final.clone(),
+            token,
+        }
+    }).collect::<Vec<_>>());
 
     info!("Created new session for user: '{username}', app_id: '{app_id}'", app_id = input.app_id);
 
@@ -47,7 +50,7 @@ pub(crate) async fn create_turn_session(State(state): State<Arc<AppState>>, acce
         data: Some(CreateSessionResponse {
             webtorrent_trackers: state.webtorrent_trackers.clone(),
             stun_servers: state.stun_servers.clone(),
-            turn_servers: Some(vec![turn_session]),
+            turn_servers,
         }),
     }.into_response()
 }
