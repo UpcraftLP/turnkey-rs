@@ -2,6 +2,10 @@
 name = "turnkey_client"
 edition = "2024"
 
+[[bin]]
+name = "turnkey"
+path = "src/main.rs"
+
 [dependencies]
 reqwest = { version = "0.13.5", features = ["json", "zstd"] }
 "rootcause" = { workspace = true }
