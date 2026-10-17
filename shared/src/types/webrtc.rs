@@ -7,6 +7,8 @@ use rootcause::bail;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use std::str::FromStr;
+use rootcause::option_ext::OptionExt;
+use rootcause::prelude::ResultExt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -78,12 +80,15 @@ impl FromStr for TurnServerInfo {
             bail!("Must start with 'turn:'!");
         }
 
-        let mut parts = s.splitn(3, ':').skip(1);
+        // TODO better parsing
+        let mut parts = s.splitn(4, ':').skip(1);
         let Some(address) = parts.next() else { bail!("No address provided!"); };
+        let port: u16 = parts.next().context("No port provided!")?
+            .parse().context("Could not parse server port! Address must be in format 'turn:<address>:<port>[:secret]'!")?;
         let shared_secret = parts.next().unwrap_or_default();
 
         Ok(Self {
-            address: address.into(),
+            address: format!("turn:{address}:{port}"),
             shared_secret: shared_secret.into(),
         })
     }
