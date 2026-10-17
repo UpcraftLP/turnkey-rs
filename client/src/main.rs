@@ -35,6 +35,9 @@ struct Args {
     #[arg(long)]
     credentials_file: Option<PathBuf>,
 
+    #[arg(long, default_value_t = false)]
+    disable_ansi: bool,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -56,7 +59,10 @@ struct App<C: HttpClient> {
 
 #[tokio::main]
 async fn main() -> rootcause::Result<()> {
+    let cli = Args::parse();
+
     tracing_subscriber::fmt()
+        .with_ansi(!cli.disable_ansi)
         .with_env_filter(
             tracing_subscriber::EnvFilter::builder()
                 .with_default_directive(Level::INFO.into())
@@ -64,8 +70,6 @@ async fn main() -> rootcause::Result<()> {
         )
         .with_writer(io::stderr)
         .init();
-
-    let cli = Args::parse();
 
     // TODO set shared user-agent
     let http_client = ReqwestClient::builder().build().await?;
