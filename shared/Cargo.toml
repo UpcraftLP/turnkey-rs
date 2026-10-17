@@ -5,8 +5,10 @@ edition = "2024"
 [dependencies]
 chrono = { workspace = true }
 const_format = { version = "0.2.36", features = ["rust_1_83", "fmt"] }
+hmac = "0.13.0"
 http.workspace = true
 http-serde = "2.1.1"
 rootcause = { workspace = true }
 serde = { workspace = true }
 serde_with = { version = "3.24.0", features = ["base64"] }
+sha1 = "0.11.0"

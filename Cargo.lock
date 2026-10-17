@@ -3329,11 +3329,13 @@ version = "0.0.0"
 dependencies = [
  "chrono",
  "const_format",
+ "hmac",
  "http",
  "http-serde",
  "rootcause",
  "serde",
  "serde_with",
+ "sha1",
 ]
 
 [[package]]
