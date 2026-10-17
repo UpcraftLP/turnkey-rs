@@ -66,7 +66,6 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(app: &App<C>) -> root
     }
 
     // TODO turn this into webview instead
-    info!("Authorization URL: {authorization_url}");
     webbrowser::open(&authorization_url.to_string()).context("Unable to open authorization URL in browser")?;
 
     // TODO custom CallbackRenderer to customize HTML that is shown to the user
