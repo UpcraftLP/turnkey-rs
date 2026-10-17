@@ -11,8 +11,6 @@ chrono = { workspace = true }
 "tokio" = { workspace = true }
 "tracing" = { workspace = true }
 "tracing-subscriber" = { workspace = true }
-sha1 = "0.11.0"
-hmac = "0.13.0"
 dotenvy = { git = "https://github.com/allan2/dotenvy", rev = "cf125ddeb263c234ad83a46e5d4115b53888f24f", version = "0.15.7", features = ["macros"] }
 huskarl.workspace = true
 huskarl-reqwest = { workspace = true }
