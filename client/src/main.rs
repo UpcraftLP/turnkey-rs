@@ -5,20 +5,21 @@ mod auth;
 mod credentials;
 mod store;
 
-use std::io;
 use clap::{Parser, Subcommand};
 use huskarl::core::http::HttpClient;
 use huskarl::core::server_metadata::AuthorizationServerMetadata;
+use huskarl_reqwest::ReqwestClient;
 use rootcause::prelude::ResultExt;
+use std::io;
 use std::path::PathBuf;
 use default_env::default_env;
-use huskarl_reqwest::ReqwestClient;
 use tracing::Level;
+use turnkey_shared::types::tube::TubeAppID;
 
 // TODO set during build
 const OIDC_ISSUER_URL: &str = env!("TURNKEY_OIDC_ISSUER_URL");
 const OAUTH_CLIENT_ID: &str = env!("TURNKEY_OIDC_CLIENT_ID");
-const TURN_SESSION_SERVER_URL: &str = "http://localhost:5000"; // default_env!("TURNKEY_SESSION_SERVER_URL", "http://localhost:5000"); // TODO migrate to stdlib option_env!().unwrap_or() when that becomes const in stable toolchain
+const TURN_SESSION_SERVER_URL: &str = default_env!("TURNKEY_SESSION_SERVER_URL", "http://localhost:5000"); // TODO migrate to stdlib option_env!().unwrap_or() when that becomes const in stable toolchain
 const OAUTH_SCOPES: [&str; 4] = ["openid", "profile", "offline_access", "bound_key"];
 
 // TODO store refresh token with salt
@@ -35,11 +36,18 @@ struct Args {
     credentials_file: Option<PathBuf>,
 
     #[command(subcommand)]
-    command: Option<Commands>,
+    command: Commands,
 }
 
 #[derive(Subcommand)]
-enum Commands {}
+enum Commands {
+    Login { },
+    #[command(name = "create-session")]
+    CreateSession {
+        #[arg(long)]
+        app_id: TubeAppID,
+    }
+}
 
 struct App<C: HttpClient> {
     auth_metadata: AuthorizationServerMetadata,
@@ -57,7 +65,7 @@ async fn main() -> rootcause::Result<()> {
         .with_writer(io::stderr)
         .init();
 
-    let cli = Args::try_parse().context("Unable to parse CLI arguments")?;
+    let cli = Args::parse();
 
     // TODO set shared user-agent
     let http_client = ReqwestClient::builder().build().await?;
@@ -74,7 +82,15 @@ async fn main() -> rootcause::Result<()> {
         auth_metadata: metadata,
     };
 
-    auth::login(&app).await.context("Unable to authenticate")?;
+    match &cli.command {
+        Commands::Login { } => {
+            auth::login(&app).await.context("Unable to authenticate")?;
+        }
+        Commands::CreateSession { app_id } => {
+            let authorizer = auth::login(&app).await.context("Unable to authenticate")?;
+            auth::create_session(&app, authorizer, app_id).await.context("Unable to create session")?;
+        }
+    }
 
     // TODO configure DPoP
     // https://github.com/huskarl-rs/huskarl/blob/main/huskarl/docs/guide/dpop.md

@@ -13,13 +13,14 @@ use huskarl_crypto_native::asymmetric::signer::{GenerateAlgorithm, PrivateKey};
 use reqwest::{Client, Method};
 use rootcause::prelude::ResultExt;
 use std::str::FromStr;
-use bytes::Bytes;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tracing::info;
 use url::Url;
+use turnkey_shared::types::session::CreateSessionInput;
+use turnkey_shared::types::tube::TubeAppID;
 
-pub(crate) async fn login<C: HttpClient + Clone + 'static>(app: &App<C>) -> rootcause::Result<()> {
+pub(crate) async fn login<C: HttpClient + Clone + 'static>(state: &App<C>) -> rootcause::Result<HttpAuthorizer> {
     let listener = bind_loopback(0)
         .await
         .context("Failed to bind auth callback listener")?;
@@ -28,10 +29,10 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(app: &App<C>) -> root
     let dpop_key = PrivateKey::generate(GenerateAlgorithm::Es256, None)
         .context("Failed to generate DPoP key")?;
 
-    let grant = AuthorizationCodeGrant::builder_from_metadata(&app.auth_metadata)
+    let grant = AuthorizationCodeGrant::builder_from_metadata(&state.auth_metadata)
         .context("Authorization server does not support authorization code grant")?
         .client_id(OAUTH_CLIENT_ID)
-        .http_client(app.auth_http_client.clone())
+        .http_client(state.auth_http_client.clone())
         .client_auth(NoAuth)
         .redirect_uri(format!(
             "http://{addr}/login/callback",
@@ -89,6 +90,11 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(app: &App<C>) -> root
         .cache(InMemoryTokenCache::builder().source(token_source).build())
         .build();
 
+    Ok(authorizer)
+}
+
+pub async fn create_session<C: HttpClient + Clone + 'static>(state: &App<C>, authorizer: HttpAuthorizer, app_id: &TubeAppID) -> rootcause::Result<()> {
+
     let endpoint_url = Url::parse(TURN_SESSION_SERVER_URL)
         .and_then(|it| it.join("api/v0/create-turn-session"))
         .context("Unable to create TURN session endpoint URL")?;
@@ -101,7 +107,11 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(app: &App<C>) -> root
     // TODO user agent
     let rq_client = Client::builder().build()?;
 
-    let response = rq_client.post(endpoint_url).headers(headers).send().await.context("Failed to send TURN session API request")?;
+    let response = rq_client.post(endpoint_url).headers(headers)
+        .json(&CreateSessionInput {
+            app_id: app_id.clone(),
+        })
+        .send().await.context("Failed to send TURN session API request")?;
     let status = response.status().as_u16();
 
     let parsed: Value = response.error_for_status().context_with(|| format!("Received status code {status}"))?.json_with_error().await
@@ -119,7 +129,7 @@ impl reqwest::Response {
         T: DeserializeOwned,
     {
         let url = self.url().clone();
-        let content: Bytes = self
+        let content = self
             .bytes()
             .await
             .context_with(|| format!("Unable to read response body for {url}"))?;

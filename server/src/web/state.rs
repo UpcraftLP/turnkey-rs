@@ -3,10 +3,11 @@ use hmac::{Hmac, KeyInit, Mac};
 use huskarl::core::server_metadata::AuthorizationServerMetadata;
 use huskarl_reqwest::ReqwestClient;
 use rootcause::option_ext::OptionExt;
-use rootcause::prelude::ResultExt;
+use rootcause::prelude::{IteratorExt, ResultExt};
 use sha1::Sha1;
 use std::env;
 use url::Url;
+use turnkey_shared::types::webrtc::{StunServerSession, WebTorrentTrackerSession};
 
 pub(crate) type HmacSha1 = Hmac<Sha1>;
 
@@ -16,6 +17,9 @@ pub(crate) struct AppState {
     turn_shared_secret: Vec<u8>,
     pub auth_http_client: ReqwestClient,
     pub auth_metadata: AuthorizationServerMetadata,
+
+    pub webtorrent_trackers: Option<Vec<WebTorrentTrackerSession>>,
+    pub stun_servers: Option<Vec<StunServerSession>>,
 }
 
 impl AppState {
@@ -26,6 +30,16 @@ impl AppState {
         let frontend_url: Url = frontend
             .parse()
             .context("FRONTEND_URL was not a valid URL")?;
+
+        let webtorrent_trackers = env::var("WEBTORRENT_TRACKER_URLS")
+            .ok()
+            .map(|s| s.split(',').into_iter().map(|s| s.parse::<WebTorrentTrackerSession>()).collect_reports_vec()).transpose()
+            .context("Unable to parse WEBTORRENT_TRACKER_URLS")?;
+
+        let stun_servers = env::var("STUN_SERVER_URLS")
+            .ok()
+            .map(|s| s.split(',').into_iter().map(|s| s.parse::<StunServerSession>()).collect_reports_vec()).transpose()
+            .context("Unable to parse STUN_SERVER_URLS")?;
 
         let shared_secret = env::var("TURN_SHARED_SECRET")
             .ok()
@@ -48,6 +62,9 @@ impl AppState {
             turn_shared_secret: shared_secret.as_bytes().to_vec(),
             auth_http_client,
             auth_metadata: metadata,
+
+            webtorrent_trackers,
+            stun_servers,
         })
     }
 

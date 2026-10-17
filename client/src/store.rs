@@ -1,6 +1,6 @@
 use crate::credentials::OAuthCredentials;
 use serde::Serialize;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 #[derive(Serialize)]
 pub(crate) struct StoredCredentials {}
