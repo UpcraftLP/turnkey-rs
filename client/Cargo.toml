@@ -15,11 +15,10 @@ clap = { version = "4.6.7", features = ["derive", "wrap_help"] }
 huskarl = { workspace = true, features = ["authorization-flow-loopback", "experimental-oidc-key-binding"] }
 huskarl-reqwest = { workspace = true }
 huskarl-crypto-native = { workspace = true }
-http = { workspace = true }
-url = "2.5.8"
 default-env = "0.1.1"
 webbrowser = { version = "1.2.4", features = ["hardened", "disable-wsl"] }
 extension-traits = "2.0.3"
 serde_json = "1.0.154"
 serde_path_to_error = "0.1.20"
-bytes = { version = "1.12.1", features = ["serde"] }
+http.workspace = true
+url = "2.5.8"
