@@ -10,6 +10,9 @@ pub struct CreateSessionInput {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateSessionResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub app_id: Option<TubeAppID>,
+    
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub webtorrent_trackers: Option<Vec<WebTorrentTrackerSession>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]

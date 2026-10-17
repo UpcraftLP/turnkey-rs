@@ -48,6 +48,7 @@ pub(crate) async fn create_turn_session(State(state): State<Arc<AppState>>, acce
 
     ApiResponse {
         data: Some(CreateSessionResponse {
+            app_id: Some(input.app_id),
             webtorrent_trackers: state.webtorrent_trackers.clone(),
             stun_servers: state.stun_servers.clone(),
             turn_servers,
