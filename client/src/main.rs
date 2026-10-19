@@ -2,8 +2,8 @@
 extern crate extension_traits;
 
 mod auth;
-mod credentials;
 mod store;
+pub mod signer;
 
 use clap::{Parser, Subcommand};
 use huskarl::core::http::HttpClient;

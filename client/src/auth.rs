@@ -1,4 +1,4 @@
-use crate::{App, OAUTH_CLIENT_ID, TURN_SESSION_SERVER_URL};
+use crate::{signer, App, OAUTH_CLIENT_ID, TURN_SESSION_SERVER_URL};
 use chrono::{DateTime, Utc};
 use http::Uri;
 use huskarl::authorizer::HttpAuthorizer;
@@ -9,25 +9,27 @@ use huskarl::core::http::HttpClient;
 use huskarl::grant::authorization_code::{
     AuthorizationCodeGrant, Display, StartInput, StartOutput, bind_loopback,
 };
-use huskarl_crypto_native::asymmetric::signer::{GenerateAlgorithm, PrivateKey};
 use reqwest::{Client, Method};
 use rootcause::prelude::ResultExt;
 use std::str::FromStr;
+use hardware_enclave::AccessPolicy;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tracing::info;
 use url::Url;
 use turnkey_shared::types::session::CreateSessionInput;
 use turnkey_shared::types::tube::TubeAppID;
+use crate::signer::{TpmDPoPSelector, TpmDPoPSigner};
 
 pub(crate) async fn login<C: HttpClient + Clone + 'static>(state: &App<C>) -> rootcause::Result<HttpAuthorizer> {
     let listener = bind_loopback(0)
         .await
         .context("Failed to bind auth callback listener")?;
 
-    // TODO get from savefile
-    let dpop_key = PrivateKey::generate(GenerateAlgorithm::Es256, None)
-        .context("Failed to generate DPoP key")?;
+    let dpop_signer = TpmDPoPSigner::new(signer::DEFAULT_KEY_NAME, AccessPolicy::None)
+        .context("Unable to load TPM key")?;
+
+    let dpop_selector = TpmDPoPSelector::new(dpop_signer);
 
     let grant = AuthorizationCodeGrant::builder_from_metadata(&state.auth_metadata)
         .context("Authorization server does not support authorization code grant")?
@@ -40,7 +42,7 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(state: &App<C>) -> ro
                 .local_addr()
                 .context("Unable to get callback address")?
         ))
-        .dpop(DPoP::builder().signer(dpop_key).build())
+        .dpop(DPoP::builder().signer(dpop_selector).build())
         .build()
         .await
         .context("Failed to build authorization grant")?;

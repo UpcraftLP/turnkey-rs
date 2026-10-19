@@ -1,22 +1,12 @@
-use crate::credentials::OAuthCredentials;
-use serde::Serialize;
-use std::path::Path;
+use std::fmt::Debug;
 
-#[derive(Serialize)]
-pub(crate) struct StoredCredentials {}
+#[derive(Debug)]
+struct HardwareBackedKeystore {}
 
-impl StoredCredentials {
-    pub(crate) async fn save(&self, file: impl AsRef<Path>) -> rootcause::Result<()> {
-        todo!("implement saving")
-    }
+const KEY_NAME: &str = "DPoP";
 
-    pub(crate) async fn load(file: impl AsRef<Path>) -> rootcause::Result<Option<Self>> {
-        todo!("implement loading")
-    }
-}
-
-impl From<OAuthCredentials> for StoredCredentials {
-    fn from(value: OAuthCredentials) -> Self {
-        todo!("implement serialization")
+impl HardwareBackedKeystore {
+    pub fn new() -> rootcause::Result<Self> {
+        todo!()
     }
 }
