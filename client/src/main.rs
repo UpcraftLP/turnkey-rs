@@ -104,9 +104,18 @@ async fn main() -> rootcause::Result<()> {
                 .context("Unable to authenticate")?;
         }
         Commands::CreateSession { app_id } => {
-            auth::login(&app, tcp_listener)
+            // TODO maybe better error handling here
+            if !app
+                .auth_token_source
+                .can_restore(None)
                 .await
-                .context("Unable to authenticate")?;
+                .is_ok_and(|v| v)
+            {
+                auth::login(&app, tcp_listener)
+                    .await
+                    .context("Unable to authenticate")?;
+            }
+
             auth::create_session(&app, app_id)
                 .await
                 .context("Unable to create session")?;

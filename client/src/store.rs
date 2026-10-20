@@ -4,10 +4,10 @@ use huskarl::core::{Error, RetryAdvice};
 use huskarl::token::RefreshToken;
 use rootcause::prelude::ResultExt;
 use std::fmt::Debug;
+use std::fs;
+use std::fs::File;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
-use tokio::fs;
-use tracing::info;
 
 #[derive(Debug)]
 pub struct FileBackedRefreshTokenStore {
@@ -23,7 +23,7 @@ impl FileBackedRefreshTokenStore {
         let buf = save_file.as_ref().to_path_buf();
 
         if let Some(parent) = buf.parent() {
-            fs::create_dir_all(parent).await.context_with(|| {
+            fs::create_dir_all(parent).context_with(|| {
                 format!(
                     "Unable to create directory: {parent}",
                     parent = parent.display()
@@ -41,20 +41,26 @@ impl FileBackedRefreshTokenStore {
 impl RefreshTokenStore for FileBackedRefreshTokenStore {
     fn get(&self) -> MaybeSendBoxFuture<'_, Result<Option<RefreshToken>, Error>> {
         Box::pin(async move {
-            if !self.save_file.exists() {
-                return Ok(None);
-            }
+            match File::open(&self.save_file) {
+                Ok(file) => {
+                    let token: RefreshToken = serde_json::from_reader(file)
+                        .context("Unable to parse stored refresh token")
+                        .map_err(|e| Error::new(RetryAdvice::No, e))?;
+                    Ok(Some(token))
+                }
+                Err(e) => {
+                    if e.kind() == ErrorKind::NotFound {
+                        return Ok(None);
+                    }
 
-            Ok(None)
+                    Err(Error::new(RetryAdvice::No, e))
+                }
+            }
         })
     }
 
     fn set<'a>(&'a self, token: &'a RefreshToken) -> MaybeSendBoxFuture<'a, Result<(), Error>> {
         Box::pin(async move {
-            let result =
-                serde_json::to_string(token).map_err(|e| Error::new(RetryAdvice::No, e))?;
-            info!("SET: {result}");
-
             if token.dpop_jkt().is_none_or(|s| s != self.expected_dpop_jkt) {
                 return Err(Error::new(
                     RetryAdvice::No,
@@ -62,17 +68,20 @@ impl RefreshTokenStore for FileBackedRefreshTokenStore {
                 ));
             }
 
-            fs::write(&self.save_file, &result)
-                .await
-                .context("unable to create save file")
+            let file = File::create(&self.save_file)
+                .context("Unable to create save file")
                 .map_err(|e| Error::new(RetryAdvice::No, e))?;
+            serde_json::to_writer(file, token)
+                .context("Unable to save new refresh token to file")
+                .map_err(|e| Error::new(RetryAdvice::No, e))?;
+
             Ok(())
         })
     }
 
     fn clear(&self) -> MaybeSendBoxFuture<'_, Result<(), Error>> {
         Box::pin(async move {
-            match fs::remove_file(&self.save_file).await {
+            match fs::remove_file(&self.save_file) {
                 Ok(_) => Ok(()),
                 Err(e) => match e.kind() {
                     ErrorKind::NotFound => Ok(()),
