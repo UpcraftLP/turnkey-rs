@@ -81,13 +81,13 @@ impl RefreshTokenStore for FileBackedRefreshTokenStore {
 
     fn clear(&self) -> MaybeSendBoxFuture<'_, Result<(), Error>> {
         Box::pin(async move {
-            match fs::remove_file(&self.save_file) {
-                Ok(_) => Ok(()),
-                Err(e) => match e.kind() {
-                    ErrorKind::NotFound => Ok(()),
-                    _ => Err(Error::new(RetryAdvice::No, e)),
-                },
+            if let Err(e) = fs::remove_file(&self.save_file)
+                && !matches!(e.kind(), ErrorKind::NotFound)
+            {
+                return Err(Error::new(RetryAdvice::No, e));
             }
+
+            Ok(())
         })
     }
 }

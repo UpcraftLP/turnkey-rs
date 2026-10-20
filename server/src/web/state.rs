@@ -14,7 +14,7 @@ pub(crate) struct AppState {
 
     pub webtorrent_trackers: Option<Vec<WebTorrentTrackerSession>>,
     pub stun_servers: Option<Vec<StunServerSession>>,
-    pub turn_servers: Option<Vec<TurnServerInfo>>
+    pub turn_servers: Option<Vec<TurnServerInfo>>,
 }
 
 impl AppState {
@@ -28,17 +28,32 @@ impl AppState {
 
         let webtorrent_trackers = env::var("WEBTORRENT_TRACKER_URLS")
             .ok()
-            .map(|s| s.split(',').into_iter().map(|s| s.parse::<WebTorrentTrackerSession>()).collect_reports_vec()).transpose()
+            .map(|s| {
+                s.split(',')
+                    .map(|s| s.parse::<WebTorrentTrackerSession>())
+                    .collect_reports_vec()
+            })
+            .transpose()
             .context("Unable to parse WEBTORRENT_TRACKER_URLS")?;
 
         let stun_servers = env::var("STUN_SERVER_URLS")
             .ok()
-            .map(|s| s.split(',').into_iter().map(|s| s.parse::<StunServerSession>()).collect_reports_vec()).transpose()
+            .map(|s| {
+                s.split(',')
+                    .map(|s| s.parse::<StunServerSession>())
+                    .collect_reports_vec()
+            })
+            .transpose()
             .context("Unable to parse STUN_SERVER_URLS")?;
 
         let turn_servers = env::var("TURN_SERVER_URLS")
             .ok()
-            .map(|s| s.split(",").into_iter().map(|s| s.parse::<TurnServerInfo>()).collect_reports_vec()).transpose()
+            .map(|s| {
+                s.split(",")
+                    .map(|s| s.parse::<TurnServerInfo>())
+                    .collect_reports_vec()
+            })
+            .transpose()
             .context("Unable to parse TURN_SERVER_URLS")?;
 
         let auth_server_url = env::var("OIDC_ISSUER_URL")

@@ -1,7 +1,7 @@
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
 use const_format::formatcp;
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 const TUBE_APP_ID_LENGTH: usize = 15;
 
@@ -18,7 +18,9 @@ impl FromStr for TubeAppID {
         }
 
         if s.len() != TUBE_APP_ID_LENGTH {
-            return Err(formatcp!("App ID must be exactly {TUBE_APP_ID_LENGTH} ASCII characters!").into());
+            return Err(
+                formatcp!("App ID must be exactly {TUBE_APP_ID_LENGTH} ASCII characters!").into(),
+            );
         }
 
         Ok(Self(s.into()))

@@ -4,11 +4,11 @@ use hmac::digest::CtOutput;
 use hmac::{KeyInit, Mac};
 use http::Uri;
 use rootcause::bail;
+use rootcause::option_ext::OptionExt;
+use rootcause::prelude::ResultExt;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use std::str::FromStr;
-use rootcause::option_ext::OptionExt;
-use rootcause::prelude::ResultExt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -57,14 +57,11 @@ pub struct TurnServerSession {
 #[derive(Debug, Clone)]
 pub struct TurnServerInfo {
     pub address: String,
-    pub shared_secret: Vec<u8>
+    pub shared_secret: Vec<u8>,
 }
 
 impl TurnServerInfo {
-    pub fn calculate_session_token(
-        &self,
-        input: impl AsRef<[u8]>,
-    ) -> CtOutput<HmacSha1> {
+    pub fn calculate_session_token(&self, input: impl AsRef<[u8]>) -> CtOutput<HmacSha1> {
         HmacSha1::new_from_slice(&self.shared_secret)
             .expect("HMAC accepts keys of any size")
             .chain_update(input)
@@ -82,7 +79,9 @@ impl FromStr for TurnServerInfo {
 
         // TODO better parsing
         let mut parts = s.splitn(4, ':').skip(1);
-        let Some(address) = parts.next() else { bail!("No address provided!"); };
+        let Some(address) = parts.next() else {
+            bail!("No address provided!");
+        };
         let port: u16 = parts.next().context("No port provided!")?
             .parse().context("Could not parse server port! Address must be in format 'turn:<address>:<port>[:secret]'!")?;
         let shared_secret = parts.next().unwrap_or_default();
