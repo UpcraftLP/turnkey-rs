@@ -2,28 +2,31 @@
 extern crate extension_traits;
 
 mod auth;
-mod store;
 pub mod signer;
+mod store;
 
+use crate::store::FileBackedRefreshTokenStore;
 use clap::{Parser, Subcommand};
+use default_env::default_env;
+use directories::ProjectDirs;
+use huskarl::cache::GrantTokenSource;
 use huskarl::core::http::HttpClient;
-use huskarl::core::server_metadata::AuthorizationServerMetadata;
+use huskarl::grant::authorization_code::AuthorizationCodeGrant;
 use huskarl_reqwest::ReqwestClient;
+use rootcause::bail;
 use rootcause::prelude::ResultExt;
 use std::io;
 use std::path::PathBuf;
-use default_env::default_env;
+use std::sync::Arc;
 use tracing::Level;
 use turnkey_shared::types::tube::TubeAppID;
 
 // TODO set during build
 const OIDC_ISSUER_URL: &str = env!("TURNKEY_OIDC_ISSUER_URL");
 const OAUTH_CLIENT_ID: &str = env!("TURNKEY_OIDC_CLIENT_ID");
-const TURN_SESSION_SERVER_URL: &str = default_env!("TURNKEY_SESSION_SERVER_URL", "http://localhost:5000"); // TODO migrate to stdlib option_env!().unwrap_or() when that becomes const in stable toolchain
+const TURN_SESSION_SERVER_URL: &str =
+    default_env!("TURNKEY_SESSION_SERVER_URL", "http://localhost:5000"); // TODO migrate to stdlib option_env!().unwrap_or() when that becomes const in stable toolchain
 const OAUTH_SCOPES: [&str; 4] = ["openid", "profile", "offline_access", "bound_key"];
-
-// TODO store refresh token with salt
-const CREDENTIALS_SALT: &str = "";
 
 fn get_oauth_scopes() -> Vec<String> {
     OAUTH_SCOPES.map(Into::into).to_vec()
@@ -44,16 +47,21 @@ struct Args {
 
 #[derive(Subcommand)]
 enum Commands {
-    Login { },
+    Login {},
     #[command(name = "create-session")]
     CreateSession {
         #[arg(long)]
         app_id: TubeAppID,
-    }
+    },
 }
 
+type GrantSource = GrantTokenSource<AuthorizationCodeGrant, FileBackedRefreshTokenStore>;
+
+#[allow(dead_code)]
 struct App<C: HttpClient> {
-    auth_metadata: AuthorizationServerMetadata,
+    dirs: ProjectDirs,
+
+    auth_token_source: Arc<GrantSource>,
     auth_http_client: C,
 }
 
@@ -74,47 +82,36 @@ async fn main() -> rootcause::Result<()> {
     // TODO set shared user-agent
     let http_client = ReqwestClient::builder().build().await?;
 
-    let metadata = AuthorizationServerMetadata::oidc_fetch()
-        .http_client(&http_client)
-        .issuer(OIDC_ISSUER_URL)
-        .call()
-        .await
-        .context("Unable to request OIDC configuration from server")?;
+    let Some(dirs) = ProjectDirs::from("", "", "turnkey-rs") else {
+        bail!("Unable to find app data dir")
+    };
+
+    let token_save_path = dirs.data_local_dir().join("credentials.bin");
+    let (grant_source, tcp_listener) =
+        auth::prepare_auth_state(token_save_path, http_client.clone()).await?;
 
     let app = App {
+        dirs,
+
+        auth_token_source: Arc::new(grant_source),
         auth_http_client: http_client,
-        auth_metadata: metadata,
     };
 
     match &cli.command {
-        Commands::Login { } => {
-            auth::login(&app).await.context("Unable to authenticate")?;
+        Commands::Login {} => {
+            auth::login(&app, tcp_listener)
+                .await
+                .context("Unable to authenticate")?;
         }
         Commands::CreateSession { app_id } => {
-            let authorizer = auth::login(&app).await.context("Unable to authenticate")?;
-            auth::create_session(&app, authorizer, app_id).await.context("Unable to create session")?;
+            auth::login(&app, tcp_listener)
+                .await
+                .context("Unable to authenticate")?;
+            auth::create_session(&app, app_id)
+                .await
+                .context("Unable to create session")?;
         }
     }
 
-    // TODO configure DPoP
-    // https://github.com/huskarl-rs/huskarl/blob/main/huskarl/docs/guide/dpop.md
-
-    // let grant = ClientCredentialsGrant::builder_from_metadata(&metadata)
-    //     .client_id(OAUTH_CLIENT_ID)
-    //     .http_client(http_client.clone())
-    //     .client_auth(NoAuth)
-    //     .build();
-    //
-    // let parameters = ClientCredentialsGrantParameters::builder()
-    //     .build();
-    // let response = grant.exchange(parameters).await
-    //     .context("Unable to obtain token from auth server")?;
-    //
-    // info!("Access token: {}", response.access_token().token().expose_secret());
-    // info!("Has refresh token: {}", response.refresh_token().is_some());
-
-    // step 4: save current auth/refresh tokens
-    // step 5: call create TURN session endpoint
-    // step 6: valiadte and return payload json
     Ok(())
 }
