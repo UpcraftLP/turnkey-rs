@@ -77,10 +77,10 @@ jobs:
           cache-key: "${{ matrix.os }}-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}"
 
       - name: Test
-        run: "cargo test --locked --all-features --verbose --target ${{ matrix.target }}"
+        run: "cargo test --package turnkey_client --locked --all-features --verbose --target ${{ matrix.target }}"
 
       - name: Build
-        run: "cargo build --locked --release --verbose --target ${{ matrix.target }}"
+        run: "cargo build --package turnkey_client --locked --release --verbose --target ${{ matrix.target }}"
 
       - name: Generate Build Attestation
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
@@ -124,13 +124,13 @@ jobs:
           cache-key: "macos-latest-${{ hashFiles('**/Cargo.lock') }}"
 
       - name: Test
-        run: "cargo test --locked --all-features --verbose --target x86_64-apple-darwin"
+        run: "cargo test --package turnkey_client --locked --all-features --verbose --target x86_64-apple-darwin"
 
       - name: Build (x64)
-        run: "cargo build --locked --release --verbose --target x86_64-apple-darwin"
+        run: "cargo build --package turnkey_client --locked --release --verbose --target x86_64-apple-darwin"
 
       - name: Build (arm64)
-        run: "cargo build --locked --release --verbose --target aarch64-apple-darwin"
+        run: "cargo build --package turnkey_client --locked --release --verbose --target aarch64-apple-darwin"
 
       - name: Combine
         run: |
