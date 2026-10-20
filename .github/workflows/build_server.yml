@@ -1,14 +1,16 @@
 name: Build Docker Image (Server)
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-server
   cancel-in-progress: true
 
 on:
   push:
     branches: [ "*" ]
     tags: [ "*" ]
-    paths-ignore: [ "client/**" ]
+    paths-ignore:
+      - "client/**"
+      - .github/workflows/build_cli.yml
 
 env:
   RUST_VERSION: 1.99.1
@@ -36,9 +38,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ github.token }}
-
-#      - name: Set up QEMU
-#        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
