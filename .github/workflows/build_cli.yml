@@ -105,66 +105,66 @@ jobs:
 #          curl -fsSL -H "Authorization: Bearer ${{ github.token }}" -o artifact.zip "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ steps.upload.outputs.artifact-id }}/zip"
 #          curl -fsSL -H "X-Api-Key: ${{ secrets.ARTIFACT_SERVER_TOKEN }}" -X PUT --form "file=@artifact.zip" ${{ secrets.ARTIFACT_SERVER_UPLOAD_URL }}/${{ env.REPOSITORY_NAME }}/${{ env.BUILD_TIME }}/${{ env.REPOSITORY_NAME }}-${{ matrix.os_name }}-${{ matrix.target_name }}-${{ env.BUILD_TIME }}.zip
 
-  build_macOS:
-    name: Build (MacOS)
-    needs:
-      - init
-    permissions:
-      id-token: write
-      contents: read
-      attestations: write
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
-        with:
-          toolchain: stable
-          target: x86_64-apple-darwin, aarch64-apple-darwin
-          cache-key: "macos-latest-${{ hashFiles('**/Cargo.lock') }}"
-
-      - name: Test
-        run: "cargo test --package turnkey_client --locked --all-features --verbose --target x86_64-apple-darwin"
-
-      - name: Build (x64)
-        run: "cargo build --package turnkey_client --locked --release --verbose --target x86_64-apple-darwin"
-
-      - name: Build (arm64)
-        run: "cargo build --package turnkey_client --locked --release --verbose --target aarch64-apple-darwin"
-
-      - name: Combine
-        run: |
-          mkdir -p target/combined
-          lipo -create -output target/combined/turnkey target/x86_64-apple-darwin/debug/turnkey target/aarch64-apple-darwin/debug/turnkey
-
-      - name: Generate Build Attestation
-        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
-        with:
-          subject-path: |
-            target/combined/turnkey*
-            !target/combined/turnkey*.d
-
-      - name: Upload Artifact
-        id: upload
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ${{ needs.init.outputs.REPOSITORY_NAME }}-macos-universal-${{ github.sha }}
-          if-no-files-found: error
-          path: |
-            target/combined/turnkey*
-            !target/combined/turnkey*.d
-
-  #      - name: Publish Artifacts
-  #        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'UpcraftLP/turnkey-rs'
-  #        run: |
-  #          curl -fsSL -H "Authorization: Bearer ${{ github.token }}" -o artifact.zip "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ steps.upload.outputs.artifact-id }}/zip"
-  #          curl -fsSL -H "X-Api-Key: ${{ secrets.ARTIFACT_SERVER_TOKEN }}" -X PUT --form "file=@artifact.zip" ${{ secrets.ARTIFACT_SERVER_UPLOAD_URL }}/${{ needs.init.outputs.REPOSITORY_NAME }}/${{ needs.init.outputs.BUILD_TIME }}/${{ needs.init.outputs.REPOSITORY_NAME }}-macos-universal-${{ needs.init.outputs.BUILD_TIME }}.zip
+#  build_macOS:
+#    name: Build (MacOS)
+#    needs:
+#      - init
+#    permissions:
+#      id-token: write
+#      contents: read
+#      attestations: write
+#    runs-on: macos-latest
+#    steps:
+#      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+#
+#      - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
+#        with:
+#          toolchain: stable
+#          target: x86_64-apple-darwin, aarch64-apple-darwin
+#          cache-key: "macos-latest-${{ hashFiles('**/Cargo.lock') }}"
+#
+#      - name: Test
+#        run: "cargo test --package turnkey_client --locked --all-features --verbose --target x86_64-apple-darwin"
+#
+#      - name: Build (x64)
+#        run: "cargo build --package turnkey_client --locked --release --verbose --target x86_64-apple-darwin"
+#
+#      - name: Build (arm64)
+#        run: "cargo build --package turnkey_client --locked --release --verbose --target aarch64-apple-darwin"
+#
+#      - name: Combine
+#        run: |
+#          mkdir -p target/combined
+#          lipo -create -output target/combined/turnkey target/x86_64-apple-darwin/debug/turnkey target/aarch64-apple-darwin/debug/turnkey
+#
+#      - name: Generate Build Attestation
+#        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+#        with:
+#          subject-path: |
+#            target/combined/turnkey*
+#            !target/combined/turnkey*.d
+#
+#      - name: Upload Artifact
+#        id: upload
+#        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+#        with:
+#          name: ${{ needs.init.outputs.REPOSITORY_NAME }}-macos-universal-${{ github.sha }}
+#          if-no-files-found: error
+#          path: |
+#            target/combined/turnkey*
+#            !target/combined/turnkey*.d
+#
+#      - name: Publish Artifacts
+#        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'UpcraftLP/turnkey-rs'
+#        run: |
+#          curl -fsSL -H "Authorization: Bearer ${{ github.token }}" -o artifact.zip "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ steps.upload.outputs.artifact-id }}/zip"
+#          curl -fsSL -H "X-Api-Key: ${{ secrets.ARTIFACT_SERVER_TOKEN }}" -X PUT --form "file=@artifact.zip" ${{ secrets.ARTIFACT_SERVER_UPLOAD_URL }}/${{ needs.init.outputs.REPOSITORY_NAME }}/${{ needs.init.outputs.BUILD_TIME }}/${{ needs.init.outputs.REPOSITORY_NAME }}-macos-universal-${{ needs.init.outputs.BUILD_TIME }}.zip
 
   dependency_info:
     name: Submit Dependency Information
     needs:
       - build_matrix
-      - build_macOS
+#      - build_macOS
     runs-on: ubuntu-latest
     permissions:
       id-token: write
