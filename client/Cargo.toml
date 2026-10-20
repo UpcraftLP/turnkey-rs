@@ -28,3 +28,4 @@ http.workspace = true
 url = "2.5.8"
 hardware-enclave = "0.2.10"
 p256 = { version = "0.14.0", features = ["ecdsa"] }
+directories = "6.0.0"

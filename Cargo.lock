@@ -958,6 +958,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "directories"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16f5094c54661b38d03bd7e50df373292118db60b585c08a411c6d840017fe7d"
+dependencies = [
+ "dirs-sys",
+]
+
+[[package]]
 name = "dirs"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1614,9 +1623,9 @@ checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
 
 [[package]]
 name = "huskarl"
-version = "0.11.6"
+version = "0.11.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "516fe0fae2f683de2f3686584d70dd5bdd05ea3dc3843ccf9a128f007973450c"
+checksum = "43b78d9286b24fab57fbfc8944c7cc29d699b002ff7cd925df998eed61e01c76"
 dependencies = [
  "arc-swap",
  "base64 0.23.1",
@@ -1637,6 +1646,7 @@ dependencies = [
  "snafu",
  "subtle",
  "tokio",
+ "tracing",
  "url",
  "web-time",
 ]
@@ -1658,9 +1668,9 @@ dependencies = [
 
 [[package]]
 name = "huskarl-core"
-version = "0.10.7"
+version = "0.10.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "437c52410cd0f9c74af70758a9a00a26219333fe1869cb37a224e1490a14dfe0"
+checksum = "61af1c08f1c80b554582243477ec68c82a31305a8803a7058e671e89098cbdb6"
 dependencies = [
  "arc-swap",
  "base64 0.23.1",
@@ -1682,6 +1692,7 @@ dependencies = [
  "strum",
  "subtle",
  "tokio",
+ "tracing",
  "url",
  "web-time",
  "zeroize",
@@ -1689,9 +1700,9 @@ dependencies = [
 
 [[package]]
 name = "huskarl-crypto-native"
-version = "0.11.2"
+version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "844aa057286ba3c3055d02a213d2e27fb701dc42840c9d4724fe38dee00cbdc6"
+checksum = "c9d37604212fc6d69b7ff3c58c49e23e00ec6c761d58e2d3fa11a4d576b5dcae"
 dependencies = [
  "aead 0.6.1",
  "aes-gcm 0.11.1",
@@ -1746,9 +1757,9 @@ dependencies = [
 
 [[package]]
 name = "huskarl-reqwest"
-version = "0.9.2"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3edaa4b82b8815aa8ec60bceb7554214ca48af588f23fa55371292b1ccfd85d"
+checksum = "e15c727814d9e2694581812bdbe3edc7633c5c652f6f11f1cff2681917f53bd0"
 dependencies = [
  "bon",
  "bytes",
@@ -4199,6 +4210,7 @@ dependencies = [
  "chrono",
  "clap",
  "default-env",
+ "directories",
  "extension-traits",
  "hardware-enclave",
  "http",
