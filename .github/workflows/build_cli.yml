@@ -129,8 +129,11 @@ jobs:
         with:
           swift-version: '6.4' # action do be stupid and "latest does not match <version>"
 
-      - name: Test
+      - name: Test (x64)
         run: "cargo test --package turnkey_client --locked --all-features --verbose --target x86_64-apple-darwin"
+
+      - name: Test (arm64)
+        run: "cargo test --package turnkey_client --locked --all-features --verbose --target aarch64-apple-darwin"
 
       - name: Build (x64)
         run: "cargo build --package turnkey_client --locked --release --verbose --target x86_64-apple-darwin"
