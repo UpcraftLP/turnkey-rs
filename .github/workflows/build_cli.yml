@@ -127,7 +127,7 @@ jobs:
 
       - uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9 # v3.0.0-beta.1
         with:
-          swift-version: '6' # action do be stupid and "latest does not match <version>"
+          swift-version: '6.4' # action do be stupid and "latest does not match <version>"
 
       - name: Test
         run: "cargo test --package turnkey_client --locked --all-features --verbose --target x86_64-apple-darwin"
