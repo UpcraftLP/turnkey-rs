@@ -21,7 +21,6 @@ use std::sync::Arc;
 use tracing::Level;
 use turnkey_shared::types::tube::TubeAppID;
 
-// TODO set during build
 const OIDC_ISSUER_URL: &str = env!("TURNKEY_OIDC_ISSUER_URL");
 const OAUTH_CLIENT_ID: &str = env!("TURNKEY_OIDC_CLIENT_ID");
 const TURN_SESSION_SERVER_URL: &str =
