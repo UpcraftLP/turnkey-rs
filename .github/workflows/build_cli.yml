@@ -144,7 +144,7 @@ jobs:
       - name: Combine
         run: |
           mkdir -p target/combined
-          lipo -create -output target/combined/turnkey target/x86_64-apple-darwin/debug/turnkey target/aarch64-apple-darwin/debug/turnkey
+          lipo -create -output target/combined/turnkey target/x86_64-apple-darwin/release/turnkey target/aarch64-apple-darwin/release/turnkey
 
       - name: Generate Build Attestation
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
