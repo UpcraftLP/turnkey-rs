@@ -149,9 +149,7 @@ jobs:
       - name: Generate Build Attestation
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
-          subject-path: |
-            target/combined/turnkey*
-            !target/combined/turnkey*.d
+          subject-path: target/combined/turnkey
 
       - name: Upload Artifact
         id: upload
@@ -159,9 +157,7 @@ jobs:
         with:
           name: ${{ needs.init.outputs.REPOSITORY_NAME }}-macos-universal-${{ github.sha }}
           if-no-files-found: error
-          path: |
-            target/combined/turnkey*
-            !target/combined/turnkey*.d
+          path: target/combined/turnkey
 
 #      - name: Publish Artifacts
 #        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'UpcraftLP/turnkey-rs'
