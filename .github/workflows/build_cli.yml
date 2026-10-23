@@ -100,7 +100,7 @@ jobs:
       - name: Publish Artifacts
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'UpcraftLP/turnkey-rs'
         run: |
-          curl -fsSL -H "Authorization: Bearer ${{ github.token }}" -o artifact.zip "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ steps.upload.outputs.artifact-id }}/zip"
+          curl -fsSL -H "Authorization: Bearer ${{ github.token }}" -o artifact.zip "${{ steps.upload.outputs.artifact-url }}"
           curl -fsSL -H "X-Api-Key: ${{ secrets.ARTIFACT_SERVER_TOKEN }}" -X PUT --form "file=@artifact.zip" ${{ secrets.ARTIFACT_SERVER_UPLOAD_URL }}/${{ env.PACKAGE_NAME }}/${{ env.BUILD_TIME }}/${{ env.PACKAGE_NAME }}-${{ matrix.os_name }}-${{ matrix.target_name }}-${{ env.BUILD_TIME }}.zip
 
   build_macOS:
@@ -160,7 +160,7 @@ jobs:
       - name: Publish Artifacts
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'UpcraftLP/turnkey-rs'
         run: |
-          curl -fsSL -H "Authorization: Bearer ${{ github.token }}" -o artifact.zip "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ steps.upload.outputs.artifact-id }}/zip"
+          curl -fsSL -H "Authorization: Bearer ${{ github.token }}" -o artifact.zip "${{ steps.upload.outputs.artifact-url }}"
           curl -fsSL -H "X-Api-Key: ${{ secrets.ARTIFACT_SERVER_TOKEN }}" -X PUT --form "file=@artifact.zip" ${{ secrets.ARTIFACT_SERVER_UPLOAD_URL }}/${{ env.PACKAGE_NAME }}/${{ needs.init.outputs.BUILD_TIME }}/${{ env.PACKAGE_NAME }}-macos-universal-${{ needs.init.outputs.BUILD_TIME }}.zip
 
   dependency_info:
