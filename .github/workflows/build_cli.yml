@@ -97,11 +97,19 @@ jobs:
             target/${{ matrix.target }}/release/turnkey*
             !target/${{ matrix.target }}/release/turnkey*.d
 
+      # TODO put download and publish tasks for everything into separate job so it only runs if all build jobs complete successfully
+      - name: Download Artifacts
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'UpcraftLP/turnkey-rs'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ steps.upload.outputs.artifact-id }}
+          path: artifact.zip
+          skip-decompress: 'true'
+
       - name: Publish Artifacts
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'UpcraftLP/turnkey-rs'
         run: |
-          curl -fsSL -H "Authorization: Bearer ${{ github.token }}" -o artifact.zip "${{ steps.upload.outputs.artifact-url }}"
-          curl -fsSL -H "X-Api-Key: ${{ secrets.ARTIFACT_SERVER_TOKEN }}" -X PUT --form "file=@artifact.zip" ${{ secrets.ARTIFACT_SERVER_UPLOAD_URL }}/${{ env.PACKAGE_NAME }}/${{ env.BUILD_TIME }}/${{ env.PACKAGE_NAME }}-${{ matrix.os_name }}-${{ matrix.target_name }}-${{ env.BUILD_TIME }}.zip
+          curl -fsSL -H "X-Api-Key: ${{ secrets.ARTIFACT_SERVER_TOKEN }}" -X PUT --form "file=@artifact.zip" "${{ secrets.ARTIFACT_SERVER_UPLOAD_URL }}/${{ env.PACKAGE_NAME }}/${{ env.BUILD_TIME }}/${{ env.PACKAGE_NAME }}-${{ matrix.os_name }}-${{ matrix.target_name }}-${{ env.BUILD_TIME }}.zip"
 
   build_macOS:
     name: Build (MacOS)
@@ -157,11 +165,18 @@ jobs:
           if-no-files-found: error
           path: target/combined/turnkey
 
+      - name: Download Artifacts
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'UpcraftLP/turnkey-rs'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ steps.upload.outputs.artifact-id }}
+          path: artifact.zip
+          skip-decompress: 'true'
+
       - name: Publish Artifacts
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'UpcraftLP/turnkey-rs'
         run: |
-          curl -fsSL -H "Authorization: Bearer ${{ github.token }}" -o artifact.zip "${{ steps.upload.outputs.artifact-url }}"
-          curl -fsSL -H "X-Api-Key: ${{ secrets.ARTIFACT_SERVER_TOKEN }}" -X PUT --form "file=@artifact.zip" ${{ secrets.ARTIFACT_SERVER_UPLOAD_URL }}/${{ env.PACKAGE_NAME }}/${{ needs.init.outputs.BUILD_TIME }}/${{ env.PACKAGE_NAME }}-macos-universal-${{ needs.init.outputs.BUILD_TIME }}.zip
+          curl -fsSL -H "X-Api-Key: ${{ secrets.ARTIFACT_SERVER_TOKEN }}" -X PUT --form "file=@artifact.zip" "${{ secrets.ARTIFACT_SERVER_UPLOAD_URL }}/${{ env.PACKAGE_NAME }}/${{ needs.init.outputs.BUILD_TIME }}/${{ env.PACKAGE_NAME }}-macos-universal-${{ needs.init.outputs.BUILD_TIME }}.zip"
 
   dependency_info:
     name: Submit Dependency Information
