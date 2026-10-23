@@ -18,18 +18,17 @@ env:
   TURNKEY_OIDC_ISSUER_URL: ${{ vars.TURNKEY_OIDC_ISSUER_URL }}
   TURNKEY_OIDC_CLIENT_ID: ${{ vars.TURNKEY_OIDC_CLIENT_ID }}
   TURNKEY_SESSION_SERVER_URL: ${{ vars.TURNKEY_SESSION_SERVER_URL }}
+  PACKAGE_NAME: turnkey
 
 jobs:
   init:
     runs-on: ubuntu-latest
     outputs:
-      REPOSITORY_NAME: ${{ steps.setup.outputs.REPOSITORY_NAME }}
       BUILD_TIME: ${{ steps.setup.outputs.BUILD_TIME }}
     steps:
       - name: Setup Environment
         id: setup
         run: |
-          echo "REPOSITORY_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_OUTPUT
           echo BUILD_TIME=$(date '+%y.%m%d.%H%M') >> $GITHUB_OUTPUT
 
   build_matrix:
@@ -40,7 +39,6 @@ jobs:
     env:
       BUILD_TIME: ${{ needs.init.outputs.BUILD_TIME }}
       APP_VERSION: ${{ needs.init.outputs.BUILD_TIME }}
-      REPOSITORY_NAME: ${{ needs.init.outputs.REPOSITORY_NAME }}
     permissions:
       id-token: write
       contents: read
@@ -93,17 +91,17 @@ jobs:
         id: upload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ needs.init.outputs.REPOSITORY_NAME }}-${{ matrix.os_name }}-${{ matrix.target_name }}-${{ github.sha }}
+          name: ${{ env.PACKAGE_NAME }}-${{ matrix.os_name }}-${{ matrix.target_name }}-${{ github.sha }}
           if-no-files-found: error
           path: |
             target/${{ matrix.target }}/release/turnkey*
             !target/${{ matrix.target }}/release/turnkey*.d
 
-#      - name: Publish Artifacts
-#        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'UpcraftLP/turnkey-rs'
-#        run: |
-#          curl -fsSL -H "Authorization: Bearer ${{ github.token }}" -o artifact.zip "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ steps.upload.outputs.artifact-id }}/zip"
-#          curl -fsSL -H "X-Api-Key: ${{ secrets.ARTIFACT_SERVER_TOKEN }}" -X PUT --form "file=@artifact.zip" ${{ secrets.ARTIFACT_SERVER_UPLOAD_URL }}/${{ env.REPOSITORY_NAME }}/${{ env.BUILD_TIME }}/${{ env.REPOSITORY_NAME }}-${{ matrix.os_name }}-${{ matrix.target_name }}-${{ env.BUILD_TIME }}.zip
+      - name: Publish Artifacts
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'UpcraftLP/turnkey-rs'
+        run: |
+          curl -fsSL -H "Authorization: Bearer ${{ github.token }}" -o artifact.zip "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ steps.upload.outputs.artifact-id }}/zip"
+          curl -fsSL -H "X-Api-Key: ${{ secrets.ARTIFACT_SERVER_TOKEN }}" -X PUT --form "file=@artifact.zip" ${{ secrets.ARTIFACT_SERVER_UPLOAD_URL }}/${{ env.PACKAGE_NAME }}/${{ env.BUILD_TIME }}/${{ env.PACKAGE_NAME }}-${{ matrix.os_name }}-${{ matrix.target_name }}-${{ env.BUILD_TIME }}.zip
 
   build_macOS:
     name: Build (MacOS)
@@ -155,15 +153,15 @@ jobs:
         id: upload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ needs.init.outputs.REPOSITORY_NAME }}-macos-universal-${{ github.sha }}
+          name: ${{ env.PACKAGE_NAME }}-macos-universal-${{ github.sha }}
           if-no-files-found: error
           path: target/combined/turnkey
 
-#      - name: Publish Artifacts
-#        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'UpcraftLP/turnkey-rs'
-#        run: |
-#          curl -fsSL -H "Authorization: Bearer ${{ github.token }}" -o artifact.zip "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ steps.upload.outputs.artifact-id }}/zip"
-#          curl -fsSL -H "X-Api-Key: ${{ secrets.ARTIFACT_SERVER_TOKEN }}" -X PUT --form "file=@artifact.zip" ${{ secrets.ARTIFACT_SERVER_UPLOAD_URL }}/${{ needs.init.outputs.REPOSITORY_NAME }}/${{ needs.init.outputs.BUILD_TIME }}/${{ needs.init.outputs.REPOSITORY_NAME }}-macos-universal-${{ needs.init.outputs.BUILD_TIME }}.zip
+      - name: Publish Artifacts
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'UpcraftLP/turnkey-rs'
+        run: |
+          curl -fsSL -H "Authorization: Bearer ${{ github.token }}" -o artifact.zip "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ steps.upload.outputs.artifact-id }}/zip"
+          curl -fsSL -H "X-Api-Key: ${{ secrets.ARTIFACT_SERVER_TOKEN }}" -X PUT --form "file=@artifact.zip" ${{ secrets.ARTIFACT_SERVER_UPLOAD_URL }}/${{ env.PACKAGE_NAME }}/${{ needs.init.outputs.BUILD_TIME }}/${{ env.PACKAGE_NAME }}-macos-universal-${{ needs.init.outputs.BUILD_TIME }}.zip
 
   dependency_info:
     name: Submit Dependency Information
