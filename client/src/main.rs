@@ -2,7 +2,7 @@
 extern crate extension_traits;
 
 mod auth;
-pub mod signer;
+mod signer;
 mod store;
 mod util;
 
