@@ -27,10 +27,6 @@ const TURN_SESSION_SERVER_URL: &str =
     default_env!("TURNKEY_SESSION_SERVER_URL", "http://localhost:5000"); // TODO migrate to stdlib option_env!().unwrap_or() when that becomes const in stable toolchain
 const OAUTH_SCOPES: [&str; 4] = ["openid", "profile", "offline_access", "bound_key"];
 
-fn get_oauth_scopes() -> Vec<String> {
-    OAUTH_SCOPES.map(Into::into).to_vec()
-}
-
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Args {
@@ -111,7 +107,9 @@ async fn main() -> rootcause::Result<()> {
 
     match &cli.command {
         Commands::Login {} => {
-            auth::login(&app).await.context("Unable to authenticate")?;
+            auth::login(&app, OAUTH_SCOPES.map(Into::into).to_vec())
+                .await
+                .context("Unable to authenticate")?;
         }
         Commands::CreateSession { app_id } => {
             // TODO maybe better error handling here
@@ -121,7 +119,9 @@ async fn main() -> rootcause::Result<()> {
                 .await
                 .is_ok_and(|v| v)
             {
-                auth::login(&app).await.context("Unable to authenticate")?;
+                auth::login(&app, OAUTH_SCOPES.map(Into::into).to_vec())
+                    .await
+                    .context("Unable to authenticate")?;
             }
 
             auth::create_session(&app, TURN_SESSION_SERVER_URL, app_id)

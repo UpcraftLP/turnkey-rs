@@ -79,6 +79,7 @@ pub(crate) async fn prepare_auth_state<C: HttpClient + Clone + 'static>(
 
 pub(crate) async fn login<C: HttpClient + Clone + 'static>(
     state: &App<C>,
+    oauth_scopes: Vec<String>,
 ) -> rootcause::Result<()> {
     let listener = bind_loopback(0)
         .await
@@ -106,7 +107,7 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(
     } = grant
         .start(
             StartInput::builder()
-                .scope(crate::get_oauth_scopes())
+                .scope(oauth_scopes)
                 .display(Display::Popup)
                 .build(),
         )
