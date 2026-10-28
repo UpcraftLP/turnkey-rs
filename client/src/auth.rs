@@ -1,6 +1,6 @@
-use crate::signer::{TpmDPoPSelector, TpmDPoPSigner};
+use crate::App;
+use crate::signer::{DEFAULT_KEY_NAME, TpmDPoPSelector, TpmDPoPSigner};
 use crate::store::FileBackedRefreshTokenStore;
-use crate::{App, OAUTH_CLIENT_ID, OIDC_ISSUER_URL, TURN_SESSION_SERVER_URL, signer};
 use chrono::{DateTime, Utc};
 use hardware_enclave::AccessPolicy;
 use http::Uri;
@@ -11,86 +11,99 @@ use huskarl::core::crypto::signer::AsymmetricJwsSigner;
 use huskarl::core::dpop::DPoP;
 use huskarl::core::http::HttpClient;
 use huskarl::core::server_metadata::AuthorizationServerMetadata;
+use huskarl::grant::ClientConfiguration;
 use huskarl::grant::authorization_code::{
     AuthorizationCodeGrant, Display, StartInput, StartOutput, bind_loopback,
 };
+use huskarl::grant::refresh::RefreshGrant;
 use reqwest::{Client, Method};
 use rootcause::prelude::ResultExt;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::path::Path;
 use std::str::FromStr;
-use tokio::net::TcpListener;
 use tracing::info;
 use turnkey_shared::types::session::CreateSessionInput;
 use turnkey_shared::types::tube::TubeAppID;
 use url::Url;
 
-type GrantSource = GrantTokenSource<AuthorizationCodeGrant, FileBackedRefreshTokenStore>;
+pub(crate) type GrantSource = GrantTokenSource<RefreshGrant, FileBackedRefreshTokenStore>;
 
 pub(crate) async fn prepare_auth_state<C: HttpClient + Clone + 'static>(
+    oidc_issuer_url: &str,
+    oauth_client_id: &str,
     token_save_path: impl AsRef<Path>,
-    http_client: C,
-) -> rootcause::Result<(GrantSource, TcpListener)> {
-    let listener = bind_loopback(0)
-        .await
-        .context("Failed to bind auth callback listener")?;
-
-    let auth_metadata = AuthorizationServerMetadata::oidc_fetch()
-        .http_client(&http_client)
-        .issuer(OIDC_ISSUER_URL)
+    auth_http_client: C,
+) -> rootcause::Result<(
+    AuthorizationServerMetadata,
+    ClientConfiguration,
+    GrantSource,
+)> {
+    let auth_server_metadata = AuthorizationServerMetadata::oidc_fetch()
+        .issuer(oidc_issuer_url)
+        .http_client(&auth_http_client)
         .call()
         .await
         .context("Unable to request OIDC configuration from server")?;
 
-    let dpop_signer = TpmDPoPSigner::new(signer::DEFAULT_KEY_NAME, AccessPolicy::None)
+    let dpop_signer = TpmDPoPSigner::new(DEFAULT_KEY_NAME, AccessPolicy::None)
         .context("Unable to load TPM key")?;
+
     let dpop_jkt = dpop_signer.public_key_jwk().thumbprint();
+
+    let auth_client_metadata = ClientConfiguration::builder()
+        .client_id(oauth_client_id)
+        .client_auth(NoAuth)
+        .dpop(
+            DPoP::builder()
+                .signer(TpmDPoPSelector::new(dpop_signer))
+                .build(),
+        )
+        .build();
 
     let token_store = FileBackedRefreshTokenStore::new(token_save_path, &dpop_jkt).await?;
 
-    let grant = AuthorizationCodeGrant::builder_from_metadata(&auth_metadata)
+    let grant = RefreshGrant::builder_from_metadata(&auth_server_metadata)
+        .client(&auth_client_metadata)
+        .http_client(auth_http_client)
+        .build();
+
+    let grant_source = GrantTokenSource::builder()
+        .grant(grant)
+        .grant_parameters(NoSource)
+        .refresh_store(token_store)
+        .build();
+
+    Ok((auth_server_metadata, auth_client_metadata, grant_source))
+}
+
+pub(crate) async fn login<C: HttpClient + Clone + 'static>(
+    state: &App<C>,
+) -> rootcause::Result<()> {
+    let listener = bind_loopback(0)
+        .await
+        .context("Failed to bind auth callback listener")?;
+
+    let grant = AuthorizationCodeGrant::builder_from_metadata(&state.auth_server_metadata)
         .context("Authorization server does not support authorization code grant")?
-        .client_id(OAUTH_CLIENT_ID)
-        .http_client(http_client)
-        .client_auth(NoAuth)
+        .client(&state.auth_client_metadata)
+        .http_client(state.auth_http_client.clone())
         .redirect_uri(format!(
             "http://{addr}/login/callback",
             addr = listener
                 .local_addr()
                 .context("Unable to get callback address")?
         ))
-        .dpop(
-            DPoP::builder()
-                .signer(TpmDPoPSelector::new(dpop_signer))
-                .build(),
-        )
         .build()
         .await
         .context("Failed to build authorization grant")?;
 
-    let token_source: GrantTokenSource<AuthorizationCodeGrant, FileBackedRefreshTokenStore> =
-        GrantTokenSource::builder()
-            .grant(grant)
-            .grant_parameters(NoSource)
-            .refresh_store(token_store)
-            .build();
-
-    Ok((token_source, listener))
-}
-
-pub(crate) async fn login<C: HttpClient + Clone + 'static>(
-    state: &App<C>,
-    listener: TcpListener,
-) -> rootcause::Result<()> {
     let StartOutput {
         authorization_url,
         expires_at,
         pending_state,
         ..
-    } = state
-        .auth_token_source
-        .grant()
+    } = grant
         .start(
             StartInput::builder()
                 .scope(crate::get_oauth_scopes())
@@ -111,9 +124,7 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(
         .context("Unable to open authorization URL in browser")?;
 
     // TODO custom CallbackRenderer to customize HTML that is shown to the user
-    let completed = state
-        .auth_token_source
-        .grant()
+    let completed = grant
         .complete_on_loopback(&listener, &pending_state, None)
         .await
         .context("Unable to get auth token")?;
@@ -129,6 +140,7 @@ pub(crate) async fn login<C: HttpClient + Clone + 'static>(
 
 pub async fn create_session<C: HttpClient + Clone + 'static>(
     state: &App<C>,
+    session_server_url: &str,
     app_id: &TubeAppID,
 ) -> rootcause::Result<()> {
     let authorizer = HttpAuthorizer::builder()
@@ -139,7 +151,7 @@ pub async fn create_session<C: HttpClient + Clone + 'static>(
         )
         .build();
 
-    let endpoint_url = Url::parse(TURN_SESSION_SERVER_URL)
+    let endpoint_url = Url::parse(session_server_url)
         .and_then(|it| it.join("api/v0/create-turn-session"))
         .context("Unable to create TURN session endpoint URL")?;
 

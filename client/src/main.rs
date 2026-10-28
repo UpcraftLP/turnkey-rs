@@ -5,13 +5,13 @@ mod auth;
 pub mod signer;
 mod store;
 
-use crate::store::FileBackedRefreshTokenStore;
+use crate::auth::GrantSource;
 use clap::{Parser, Subcommand};
 use default_env::default_env;
 use directories::ProjectDirs;
-use huskarl::cache::GrantTokenSource;
 use huskarl::core::http::HttpClient;
-use huskarl::grant::authorization_code::AuthorizationCodeGrant;
+use huskarl::core::server_metadata::AuthorizationServerMetadata;
+use huskarl::grant::ClientConfiguration;
 use huskarl_reqwest::ReqwestClient;
 use rootcause::bail;
 use rootcause::prelude::ResultExt;
@@ -54,12 +54,12 @@ enum Commands {
     },
 }
 
-type GrantSource = GrantTokenSource<AuthorizationCodeGrant, FileBackedRefreshTokenStore>;
-
 #[allow(dead_code)]
 struct App<C: HttpClient> {
     dirs: ProjectDirs,
 
+    auth_server_metadata: AuthorizationServerMetadata,
+    auth_client_metadata: ClientConfiguration,
     auth_token_source: Arc<GrantSource>,
     auth_http_client: C,
 }
@@ -73,34 +73,45 @@ async fn main() -> rootcause::Result<()> {
         .with_env_filter(
             tracing_subscriber::EnvFilter::builder()
                 .with_default_directive(Level::INFO.into())
+                .with_default_directive(
+                    "huskarl=warn"
+                        .parse()
+                        .context("unable to parse directive")?,
+                )
                 .from_env_lossy(),
         )
         .with_writer(io::stderr)
         .init();
 
     // TODO set shared user-agent
-    let http_client = ReqwestClient::builder().build().await?;
+    let auth_http_client = ReqwestClient::builder().build().await?;
 
     let Some(dirs) = ProjectDirs::from("", "", "turnkey-rs") else {
         bail!("Unable to find app data dir")
     };
 
     let token_save_path = dirs.data_local_dir().join("credentials.bin");
-    let (grant_source, tcp_listener) =
-        auth::prepare_auth_state(token_save_path, http_client.clone()).await?;
+
+    let (auth_server_metadata, auth_client_metadata, grant_source) = auth::prepare_auth_state(
+        OIDC_ISSUER_URL,
+        OAUTH_CLIENT_ID,
+        token_save_path,
+        auth_http_client.clone(),
+    )
+    .await?;
 
     let app = App {
         dirs,
 
+        auth_server_metadata,
+        auth_client_metadata,
         auth_token_source: Arc::new(grant_source),
-        auth_http_client: http_client,
+        auth_http_client,
     };
 
     match &cli.command {
         Commands::Login {} => {
-            auth::login(&app, tcp_listener)
-                .await
-                .context("Unable to authenticate")?;
+            auth::login(&app).await.context("Unable to authenticate")?;
         }
         Commands::CreateSession { app_id } => {
             // TODO maybe better error handling here
@@ -110,12 +121,10 @@ async fn main() -> rootcause::Result<()> {
                 .await
                 .is_ok_and(|v| v)
             {
-                auth::login(&app, tcp_listener)
-                    .await
-                    .context("Unable to authenticate")?;
+                auth::login(&app).await.context("Unable to authenticate")?;
             }
 
-            auth::create_session(&app, app_id)
+            auth::create_session(&app, TURN_SESSION_SERVER_URL, app_id)
                 .await
                 .context("Unable to create session")?;
         }
