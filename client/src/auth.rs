@@ -1,9 +1,9 @@
 use crate::App;
 use crate::signer::{DEFAULT_KEY_NAME, TpmDPoPSelector, TpmDPoPSigner};
 use crate::store::FileBackedRefreshTokenStore;
+use crate::util::UrlToUri;
 use chrono::{DateTime, Utc};
 use hardware_enclave::AccessPolicy;
-use http::Uri;
 use huskarl::authorizer::HttpAuthorizer;
 use huskarl::cache::{GrantTokenSource, InMemoryTokenCache, NoSource};
 use huskarl::core::client_auth::NoAuth;
@@ -21,7 +21,6 @@ use rootcause::prelude::ResultExt;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::path::Path;
-use std::str::FromStr;
 use tracing::info;
 use turnkey_shared::types::session::CreateSessionInput;
 use turnkey_shared::types::tube::TubeAppID;
@@ -157,7 +156,7 @@ pub async fn create_session<C: HttpClient + Clone + 'static>(
         .context("Unable to create TURN session endpoint URL")?;
 
     let headers = authorizer
-        .get_headers(&Method::POST, &Uri::from_str(endpoint_url.as_ref())?)
+        .get_headers(&Method::POST, &endpoint_url.to_uri())
         .await
         .context("Failed to create auth headers")?;
 

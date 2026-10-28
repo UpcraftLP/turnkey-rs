@@ -4,6 +4,7 @@ extern crate extension_traits;
 mod auth;
 pub mod signer;
 mod store;
+mod util;
 
 use crate::auth::GrantSource;
 use clap::{Parser, Subcommand};
