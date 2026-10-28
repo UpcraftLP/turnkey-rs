@@ -20,7 +20,7 @@ huskarl = { workspace = true, features = ["authorization-flow-loopback", "experi
 huskarl-reqwest = { workspace = true }
 huskarl-crypto-native = { workspace = true }
 default-env = "0.1.1"
-webbrowser = { version = "1.2.4", features = ["hardened", "disable-wsl"] }
+webbrowser = { version = "1.2.5", features = ["hardened", "disable-wsl"] }
 extension-traits = "2.0.3"
 serde_json = "1.0.154"
 serde_path_to_error = "0.1.20"
