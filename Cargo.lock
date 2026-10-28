@@ -1331,6 +1331,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cd417de3d1d015fc3bfd2b1ea46dfc7bab72ef86f1cc7cc9c78e728b34a6d1fd"
 
 [[package]]
+name = "futures-timer"
+version = "3.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af43fadb8a98512d547e37b4e92e0ced13e205c061b87b4623eff01d918d6968"
+
+[[package]]
 name = "futures-util"
 version = "0.3.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1623,15 +1629,16 @@ checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
 
 [[package]]
 name = "huskarl"
-version = "0.11.7"
+version = "0.11.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43b78d9286b24fab57fbfc8944c7cc29d699b002ff7cd925df998eed61e01c76"
+checksum = "9fff9ee997205eaf91c07348b229f5bc847e51fb25d9be74ff4326f20db51810"
 dependencies = [
  "arc-swap",
  "base64 0.23.1",
  "bon",
  "bytes",
  "form_urlencoded",
+ "futures-util",
  "getrandom 0.4.3",
  "gloo-timers",
  "http",
@@ -1639,6 +1646,7 @@ dependencies = [
  "huskarl-crypto-native",
  "huskarl-crypto-webcrypto",
  "huskarl-macros",
+ "jiff",
  "rand 0.10.3",
  "serde",
  "serde_json",
@@ -1668,15 +1676,16 @@ dependencies = [
 
 [[package]]
 name = "huskarl-core"
-version = "0.10.9"
+version = "0.10.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61af1c08f1c80b554582243477ec68c82a31305a8803a7058e671e89098cbdb6"
+checksum = "ea5030b4da9bb7b04139b10d5571a6d04c6cc183440f09abd599e3805a18b2a6"
 dependencies = [
  "arc-swap",
  "base64 0.23.1",
  "bon",
  "bytes",
  "form_urlencoded",
+ "futures-timer",
  "futures-util",
  "getrandom 0.4.3",
  "gloo-timers",
@@ -1684,6 +1693,7 @@ dependencies = [
  "http",
  "httpdate",
  "huskarl-macros",
+ "jiff",
  "rand 0.10.3",
  "serde",
  "serde_json",
