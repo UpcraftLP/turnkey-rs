@@ -11,4 +11,5 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 chrono = { version = "0.4.45", features = ["serde"] }
 huskarl = { version = "0.11.10" }
 huskarl-reqwest = { version = "0.9.3", features = ["rustls-tls"] }
+huskarl-resource-server = "0.11.12"
 http = "1.5.0"

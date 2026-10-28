@@ -1782,9 +1782,9 @@ dependencies = [
 
 [[package]]
 name = "huskarl-resource-server"
-version = "0.11.9"
+version = "0.11.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe28a6414095a5ccdf1641c15bcdda3b0152901ec3299b1082f0bf3de79b4d33"
+checksum = "688e0ec4fb35bd4ca9d5d83721105e33c36b4f94ec2b08ee1321d134faa81b70"
 dependencies = [
  "base64 0.23.1",
  "bon",
@@ -1796,6 +1796,7 @@ dependencies = [
  "huskarl-core",
  "huskarl-crypto-native",
  "huskarl-crypto-webcrypto",
+ "jiff",
  "serde",
  "serde_json",
  "sha2 0.11.0",
@@ -3803,7 +3804,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix 1.1.5",
  "windows-sys 0.52.0",
