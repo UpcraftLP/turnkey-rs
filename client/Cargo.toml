@@ -18,7 +18,6 @@ chrono = { workspace = true }
 clap = { version = "4.6.7", features = ["derive", "wrap_help"] }
 huskarl = { workspace = true, features = ["authorization-flow-loopback", "experimental-oidc-key-binding", "tracing"] }
 huskarl-reqwest = { workspace = true }
-huskarl-crypto-native = { workspace = true }
 default-env = "0.1.1"
 webbrowser = { version = "1.2.5", features = ["hardened", "disable-wsl"] }
 extension-traits = "2.0.3"

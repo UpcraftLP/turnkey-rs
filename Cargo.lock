@@ -4225,7 +4225,6 @@ dependencies = [
  "hardware-enclave",
  "http",
  "huskarl",
- "huskarl-crypto-native",
  "huskarl-reqwest",
  "p256 0.14.0",
  "reqwest",
